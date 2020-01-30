@@ -11,8 +11,6 @@ GoodsInfoList = []
 ResultList = []
 ThreadList = []
 
-GoodsCodeList = []
-
 # Get HTML
 def getHTML(url):
     try:
@@ -60,25 +58,19 @@ def parseGoodsNameAndBrand(title):
     product = result[0][1]
 
     return {
-        "brandNameTw": brand,
-        "brandNameEn": brand,
-        "productName": product
+        "brand": brand,
+        "product": product
     }
 
-# ParseGoodsURL
-def parseGoodsURL(goodsCode):
-    if bool(goodsCode) == False:
-        return
+# getGoodsURL
+def getGoodsURL(element):
+    code = getGoodsCode(element)
 
-    path = MainURL + '/goods.momo?i_code=' + goodsCode
+    return MainURL + '/goods.momo?i_code=' + code
 
-    return path
-
-# getyGoodsURL
-def getyGoodsURL(element):
-    goodsURL = parseGoodsURL(pq(element).find('input[name="goodsCode"]')[0].value)
-
-    return goodsURL
+# getGoodsCode
+def getGoodsCode(element):
+    return pq(element).find('input[name="goodsCode"]')[0].value
 
 # Worker for Getting Product Urls
 def workerParseGoodsURL(url):
@@ -99,14 +91,17 @@ def workerParseGoodsURL(url):
             break
 
         for element in doc('article.prdListArea li'):
-            url = getyGoodsURL(element)
+            url = getGoodsURL(element)
+            code = getGoodsCode(element)
 
             GoodsInfoList.append({
-                "url": url
+                "url": url,
+                "code": code
             })
 
         page += 1
-        break #Testing
+        if page == 10: #for testing
+            break
     
     return
 
@@ -135,8 +130,8 @@ ThreadList[1].start()
 ThreadList[1].join()
 
 # Worker for Parse ProductName, BrandName, Categorys
-def workerParseProductDetail(url):
-    # time.sleep(random.randrange(5))
+def workerParseProductDetail(goodsInfo):
+    time.sleep(random.randrange(5))
 
     detail = {
         "name": '',
@@ -146,14 +141,14 @@ def workerParseProductDetail(url):
     }
 
     #Get GoodsName
-    doc = pq(getHTML(url))
-    detail["name"] = doc('#goodsName')[0].text
+    doc = pq(getHTML(goodsInfo["url"]))
+    detail["name"] = parseGoodsNameAndBrand(doc('#goodsName')[0].text)["product"]
 
     #Get BrandName, GoodsCategory
     reqData = {
         "flag": "getGoodsRelCat",
         "data": {
-            "goodsCode": "6305793"
+            "goodsCode": goodsInfo["code"]
         }
     }
     
@@ -170,24 +165,57 @@ def workerParseProductDetail(url):
         detail["brandTW"] = doc('a.brandNameTxt').attr('brandnamechi')
         detail["brandEN"] = doc('a.brandNameTxt').attr('brandnameeng')
 
-        categoryList = set()
         def each(index, element):
-            categoryList.add(element.text)
+            detail["categoryList"].add(element.text)
         doc('dl dl dd a').each(each)
 
-        print(categoryList)
+        ResultList.append(detail)
 
 
 # Parse ProductName, BrandName, ProductCategory
 ThreadList = [] 
-for good in GoodsInfoList:
-    t = threading.Thread(target=workerParseProductDetail, args=(good["url"], ), daemon=True)
+for info in GoodsInfoList:
+    t = threading.Thread(target=workerParseProductDetail, args=(info, ), daemon=True)
     ThreadList.append(t)
 
-ThreadList[1].start()
-ThreadList[1].join()
+for t in ThreadList:
+    while threading.activeCount() >= 10:
+        pass
+    
+    t.start()
+
+for t in ThreadList:
+    t.join()
+
+# Prepare Brand map to Category
+brandCategoryList = {}
+for row in ResultList:
+    tw = row["brandTW"]
+    en = row["brandEN"]
+    categoryList = row["categoryList"]
+
+    key = en
+    if en not in brandCategoryList:
+        brandCategoryList[en] = set()
+    elif en not in brandCategoryList and tw not in brandCategoryList :
+        brandCategoryList[tw] = set()
+        key = tw
+    
+    for category in categoryList:
+        brandCategoryList[key].add(category)
+
+# Prepare CSV
+csvRowList = []
+for brandName in brandCategoryList:
+    row = []
+    row.append(brandName)
+
+    for category in brandCategoryList[brandName]:
+        row.append(category)
+    
+    csvRowList.append(row)
 
 # Write to File
 with open('outputThread.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerows(ResultList)
+    writer.writerows(csvRowList)
