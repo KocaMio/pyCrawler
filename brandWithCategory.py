@@ -6,15 +6,6 @@ from urllib.parse import urlencode
 MainURL = "https://m.momoshop.com.tw"
 AjaxToolURL = 'https://m.momoshop.com.tw/ajax/ajaxTool.jsp'
 
-# Get HTML
-def getHTML(url):
-    try:
-        result = urllib.request.urlopen(url, timeout=5).read().decode('UTF-8')
-    except Exception as e:
-        print(str(e))
-    
-    return result
-
 # ParseGoodsNameAndBrand
 def parseGoodsNameAndBrand(title):
     if bool(title) == False:
@@ -85,7 +76,7 @@ def workerParseProductDetail(code):
 startTime = time.time()
 
 GoodsCodeList = []
-with open('out1/recordGoodsInfo.csv', newline='') as csvfile:
+with open('csvCodeList', newline='') as csvfile:
   rows = csv.reader(csvfile)
   for row in rows:
     GoodsCodeList.append(row[0])

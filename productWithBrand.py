@@ -13,6 +13,9 @@ GoodsCodeList = set()
 ResultList = []
 ThreadList = []
 
+# Excute Start
+startTime = time.time()
+
 # Get HTML 
 def getHTML(url):
     try:
@@ -130,3 +133,8 @@ for code in GoodsCodeList:
 with open('csvCodeList.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerows(codeRowList)
+
+# Excute End
+endTime = time.time()
+
+print("Total Excute Time: %f sec" % (endTime - startTime))
