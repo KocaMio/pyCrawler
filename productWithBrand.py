@@ -8,6 +8,8 @@ import csv
 
 MainURL = "https://m.momoshop.com.tw"
 CategoryURLList = []
+GoodsCodeList = set()
+
 ResultList = []
 ThreadList = []
 
@@ -60,6 +62,11 @@ def processBrandAndProductName(title):
 
     ResultList.append([brand, product])
 
+# getGoodsCode
+def processGoodsCode(element):
+    code = pq(element).find('input[name="goodsCode"]')[0].value
+    GoodsCodeList.add(code)
+
 # Worker
 def worker(url):
     # Skip Particular URL
@@ -80,7 +87,9 @@ def worker(url):
 
         for element in doc('p.prdName'):
             processBrandAndProductName(element.text)
-
+        for element in doc('article.prdListArea li'):
+            processGoodsCode(element)
+            
         page += 1
     
     return
@@ -107,6 +116,17 @@ for t in ThreadList:
     t.join()
 
 # Write to File
-with open('outputThread.csv', 'w', newline='') as csvfile:
+with open('csvProductWithBrand.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerows(ResultList)
+
+# Write code to file
+codeRowList = []
+for code in GoodsCodeList:
+    row = []
+    row.append(code)
+    codeRowList.append(row)
+
+with open('csvCodeList.csv', 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerows(codeRowList)
