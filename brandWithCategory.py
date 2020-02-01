@@ -93,7 +93,7 @@ for code in GoodsCodeList:
     ThreadList.append(t)
 
 for t in ThreadList:
-    while threading.activeCount() >= 10:
+    while threading.activeCount() >= 100:
         pass
     
     t.start()
@@ -124,6 +124,9 @@ for row in ResultList:
     
     # for category in categoryList:
     #     brandCategoryList[key].add(category)
+    if key not in brandCategoryList:
+        brandCategoryList[key] = []
+
     brandCategoryList[key].append(tw).append(categoryList)
 
 # Prepare CSV
