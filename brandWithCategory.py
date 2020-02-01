@@ -6,6 +6,9 @@ from urllib.parse import urlencode
 MainURL = "https://m.momoshop.com.tw"
 AjaxToolURL = 'https://m.momoshop.com.tw/ajax/ajaxTool.jsp'
 
+BrandWithoutENList = []
+BrandWithoutName = 0
+
 # ParseGoodsNameAndBrand
 def parseGoodsNameAndBrand(title):
     if bool(title) == False:
@@ -38,7 +41,8 @@ def workerParseProductDetail(code):
         "name": '',
         "brandTW": '',
         "brandEN": '',
-        "categoryList": set()
+        # "categoryList": set()
+        "categoryList": []
     }
 
     #Get BrandName, GoodsCategory
@@ -66,7 +70,8 @@ def workerParseProductDetail(code):
         detail["brandEN"] = doc('a.brandNameTxt').attr('brandnameeng')
 
         def each(index, element):
-            detail["categoryList"].add(element.text)
+            # detail["categoryList"].add(element.text)
+            detail["categoryList"].append(element.text)
         doc('dl dl dd a').each(each)
 
         ResultList.append(detail)
@@ -76,7 +81,7 @@ def workerParseProductDetail(code):
 startTime = time.time()
 
 GoodsCodeList = []
-with open('csvCodeList', newline='') as csvfile:
+with open('csvCodeList.csv', newline='') as csvfile:
   rows = csv.reader(csvfile)
   for row in rows:
     GoodsCodeList.append(row[0])
@@ -103,15 +108,23 @@ for row in ResultList:
     en = row["brandEN"]
     categoryList = row["categoryList"]
 
-    key = en
-    if en not in brandCategoryList:
-        brandCategoryList[en] = set()
-    elif en not in brandCategoryList and tw not in brandCategoryList :
-        brandCategoryList[tw] = set()
-        key = tw
+    if tw == '' and en == '':
+        BrandWithoutName += 1
+        continue
     
-    for category in categoryList:
-        brandCategoryList[key].add(category)
+    if en == '' and tw != '':
+        BrandWithoutENList.append([tw])
+
+    key = en
+    # if en not in brandCategoryList:
+    #     brandCategoryList[en] = set()
+    # elif en not in brandCategoryList and tw not in brandCategoryList :
+    #     brandCategoryList[tw] = set()
+    #     key = tw
+    
+    # for category in categoryList:
+    #     brandCategoryList[key].add(category)
+    brandCategoryList[key].append(tw).append(categoryList)
 
 # Prepare CSV
 csvRowList = []
@@ -129,7 +142,12 @@ with open('csvBrandWithCategory.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerows(csvRowList)
 
+with open('csvBrandWithoutEn.csv', 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(BrandWithoutENList)
+
 # Excute End
 endTime = time.time()
 
 print("Total Excute Time: %f sec" % (endTime - startTime))
+print("Brand without Name count: %d" %(BrandWithoutName))
