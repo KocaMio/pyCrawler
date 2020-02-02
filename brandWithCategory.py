@@ -6,7 +6,6 @@ from urllib.parse import urlencode
 MainURL = "https://m.momoshop.com.tw"
 AjaxToolURL = 'https://m.momoshop.com.tw/ajax/ajaxTool.jsp'
 
-BrandWithoutENList = []
 BrandWithoutName = 0
 
 # ParseGoodsNameAndBrand
@@ -35,14 +34,12 @@ def getGoodsURL(code):
 ResultList = []
 def workerParseProductDetail(code):
     url = getGoodsURL(code)
-    print(url)
 
     detail = {
         "name": '',
         "brandTW": '',
         "brandEN": '',
-        # "categoryList": set()
-        "categoryList": []
+        "categoryList": set()
     }
 
     #Get BrandName, GoodsCategory
@@ -56,7 +53,7 @@ def workerParseProductDetail(code):
     param = urllib.parse.urlencode({
         "data": json.dumps(reqData)
     })
-
+    
     try:
         req = urllib.request.Request('https://m.momoshop.com.tw/ajax/ajaxTool.jsp?' + param)
         with urllib.request.urlopen(req) as res:
@@ -64,18 +61,26 @@ def workerParseProductDetail(code):
     except Exception as e:
         print(e)
 
+    reqStartTime = time.time()
     if "strPaths" in rtnData:
-        doc = pq(rtnData['strPaths'])
-        detail["brandTW"] = doc('a.brandNameTxt').attr('brandnamechi')
-        detail["brandEN"] = doc('a.brandNameTxt').attr('brandnameeng')
+        htmlText = rtnData['strPaths'].replace("\\", "")
+        brandNameTW = re.search('brandNameChi=\\"(.*?)\\"', htmlText, re.IGNORECASE)
+        brandNameEN = re.search('brandNameEng=\\"(.*?)\\"', htmlText, re.IGNORECASE)
 
-        def each(index, element):
-            # detail["categoryList"].add(element.text)
-            detail["categoryList"].append(element.text)
-        doc('dl dl dd a').each(each)
+        if brandNameEN:
+            detail["brandEN"] = brandNameEN.group(1)
+        if brandNameTW:
+            detail["brandTW"] = brandNameTW.group(1)
+
+        matchList = re.findall(r'<a.*?>(.*?)<\/a>', htmlText, re.IGNORECASE)
+        if matchList:
+            for matchItem in matchList:
+                detail["categoryList"].add(matchItem)
 
         ResultList.append(detail)
 
+    reqEndTime = time.time()
+    print('GoodsCode' + code + "  ReqEndTime: %d" % (reqEndTime - reqStartTime))
 
 # Excute Start
 startTime = time.time()
@@ -93,8 +98,8 @@ for code in GoodsCodeList:
     ThreadList.append(t)
 
 for t in ThreadList:
-    while threading.activeCount() >= 100:
-        pass
+    # while threading.activeCount() >= 1000:
+    #     pass
     
     t.start()
 
@@ -108,26 +113,16 @@ for row in ResultList:
     en = row["brandEN"]
     categoryList = row["categoryList"]
 
+    key = en + '|' + tw
     if tw == '' and en == '':
         BrandWithoutName += 1
         continue
     
-    if en == '' and tw != '':
-        BrandWithoutENList.append([tw])
-
-    key = en
-    # if en not in brandCategoryList:
-    #     brandCategoryList[en] = set()
-    # elif en not in brandCategoryList and tw not in brandCategoryList :
-    #     brandCategoryList[tw] = set()
-    #     key = tw
-    
-    # for category in categoryList:
-    #     brandCategoryList[key].add(category)
     if key not in brandCategoryList:
-        brandCategoryList[key] = []
-
-    brandCategoryList[key].append(tw).append(categoryList)
+        brandCategoryList[key] = set()
+    
+    for category in categoryList:
+        brandCategoryList[key].add(category)
 
 # Prepare CSV
 csvRowList = []
@@ -144,10 +139,6 @@ for brandName in brandCategoryList:
 with open('csvBrandWithCategory.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerows(csvRowList)
-
-with open('csvBrandWithoutEn.csv', 'w', newline='') as csvfile:
-    writer = csv.writer(csvfile)
-    writer.writerow(BrandWithoutENList)
 
 # Excute End
 endTime = time.time()
