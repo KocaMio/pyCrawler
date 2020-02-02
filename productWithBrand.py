@@ -18,10 +18,12 @@ startTime = time.time()
 
 # Get HTML 
 def getHTML(url):
+    result = ''
+
     try:
         result = urllib.request.urlopen(url, timeout=5).read().decode('UTF-8')
     except Exception as e:
-        print(str(e))
+        print(url + ' :error: ' +str(e))
     
     return result
 
@@ -34,28 +36,31 @@ def getCategoryURLList(doc):
             continue
 
         CategoryURLList.append(href)
+# parse category url list
+def parseCategoryURLList():
+    pass
 
-# Get Next Page
-def getNextPageURL(page, parsedURL):
-    newQuery = dict(urllib.parse.parse_qsl(parsedURL.query))
-    newQuery.update({'page':str(page)})
-
+# Get Page Page
+def getPageURL(page, parsedURL):
+    newQueryParams = dict(urllib.parse.parse_qsl(parsedURL.query))
+    newQueryParams.update({'page':str(page)})
     newURL = list(parsedURL)
-    newURL[4] = urllib.parse.urlencode(newQuery)
+
+    newURL[4] = urllib.parse.urlencode(newQueryParams)
 
     return urllib.parse.urlunparse(newURL)
 
 # Get Page URL List
-def isHaveNextPage(doc):
-    return bool(doc('a[name=nextPage][page=nextPage]'))
+def isPageAvaliable(htmlText):
+    findall = re.findall(r'<dt id="rightBtn" class="rightBtn">', htmlText, re.IGNORECASE)
+    return bool(findall)
 
 # ProcessBrandAndProductName
 def processBrandAndProductName(title):
-    print(title)
     if bool(title) == False:
         return
 
-    result = re.findall("【(.*?)】(\s*[^\n\r]*)", title)
+    result = re.findall(r"【(.*?)】(\s*[^\n\r]*)", title)
 
     if len(result) == 0:
         return
@@ -65,38 +70,60 @@ def processBrandAndProductName(title):
 
     ResultList.append([brand, product])
 
+#parseBrandAndProductName
+def parseBrandAndProductName(htmlText):
+    if htmlText == '':
+        return
+    
+    findallList = re.findall(r'<input type="hidden" name="goodsCode" id="goodsCode" value=\'([0-9]*)\'/>|<p class="prdName">(?:.*?【(.*?)】(.*?))<\/p>', htmlText)
+    if findallList:
+        for item in findallList:
+            code = item[0]
+            brand = item[1]
+            product = item[2]
+            if item != '':
+                GoodsCodeList.add(code)
+                pass
+            if brand != '' or product != '':
+                ResultList.append([brand, product])
+                pass
+
 # getGoodsCode
 def processGoodsCode(element):
     code = pq(element).find('input[name="goodsCode"]')[0].value
     GoodsCodeList.add(code)
 
 # Worker
-def worker(url):
-    # Skip Particular URL
-    parsedURL = urlparse(url)
-    if urllib.parse.parse_qs(parsedURL.query)['cn'][0] == '2400000000':
+def worker(CategoryURL):
+    # parse query parameters
+    parsedURL = urlparse(CategoryURL)
+    parameters = urllib.parse.parse_qs(parsedURL.query)
+
+    # Skip Particular Category URL
+    if parameters['cn'][0] == '2400000000':
         return
     
     # Prepare Pages URL List for Loop Page
-    page = 1
+    page = 0
     
     while True:
         time.sleep(random.randrange(5))
-        url = getNextPageURL(page, parsedURL)
-        doc = pq(getHTML(url))
         
-        if isHaveNextPage(doc) == False:
+        # Prepare
+        url = getPageURL(page, parsedURL)
+        
+        htmlText = getHTML(url)
+        if isPageAvaliable(htmlText) == False:
             break
-
-        for element in doc('p.prdName'):
-            processBrandAndProductName(element.text)
-        for element in doc('article.prdListArea li'):
-            processGoodsCode(element)
-            
+        
+        startTime = time.time()
+        parseBrandAndProductName(htmlText)
+        
         page += 1
     
+        endTime = time.time()
+        print(url + ' Finish Time: %d sec' % (endTime - startTime))
     return
-
 
 # Prepare Category URL List
 getCategoryURLList(pq(getHTML(MainURL + '/main.momo')))

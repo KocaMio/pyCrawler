@@ -13,7 +13,7 @@ def parseGoodsNameAndBrand(title):
     if bool(title) == False:
         return
 
-    result = re.findall("【(.*?)】|(\s*[^\n\r]*)", title)
+    result = re.findall(r"【(.*?)】|(\s*[^\n\r]*)", title)
 
     if len(result) == 0:
         return
