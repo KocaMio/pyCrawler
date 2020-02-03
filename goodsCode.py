@@ -6,6 +6,10 @@ import urllib.request
 import re
 import csv
 
+# Develop Control
+QueryCategoryAmount = 1 # 0 => query all
+QUeryCategoryPageAmount = 5 # 0 => query all
+
 MainURL = "https://m.momoshop.com.tw"
 CategoryURLList = []
 GoodsCodeList = set()
@@ -32,10 +36,15 @@ def getCategoryURLList(doc):
     for element in doc('.sortBtnArea li a'):
         href = element.attrib['href']
         
+        #skip certain category
+        if href.find('cn=2400000000') is not -1:
+            continue
+
         if href == '':
             continue
 
         CategoryURLList.append(href)
+
 # parse category url list
 def parseCategoryURLList():
     pass
@@ -55,21 +64,6 @@ def isPageAvaliable(htmlText):
     findall = re.findall(r'<dt id="rightBtn" class="rightBtn">', htmlText, re.IGNORECASE)
     return bool(findall)
 
-# ProcessBrandAndProductName
-def processBrandAndProductName(title):
-    if bool(title) == False:
-        return
-
-    result = re.findall(r"【(.*?)】(\s*[^\n\r]*)", title)
-
-    if len(result) == 0:
-        return
-
-    brand = result[0][0]
-    product = result[0][1]
-
-    ResultList.append([brand, product])
-
 #parseBrandAndProductName
 def parseBrandAndProductName(htmlText):
     if htmlText == '':
@@ -88,20 +82,22 @@ def parseBrandAndProductName(htmlText):
                 ResultList.append([brand, product])
                 pass
 
-# getGoodsCode
-def processGoodsCode(element):
-    code = pq(element).find('input[name="goodsCode"]')[0].value
-    GoodsCodeList.add(code)
+#parseGoodsCode
+def parseGoodsCode(htmlText):
+    if htmlText == '':
+        return
+    
+    findallList = re.findall(r'<input type="hidden" name="goodsCode" id="goodsCode" value=\'([0-9]*)\'/>', htmlText)
+    if len(findallList) == 0:
+        return
+
+    for code in findallList:
+        GoodsCodeList.add(code)
 
 # Worker
 def worker(CategoryURL):
     # parse query parameters
     parsedURL = urlparse(CategoryURL)
-    parameters = urllib.parse.parse_qs(parsedURL.query)
-
-    # Skip Particular Category URL
-    if parameters['cn'][0] == '2400000000':
-        return
     
     # Prepare Pages URL List for Loop Page
     page = 0
@@ -117,24 +113,31 @@ def worker(CategoryURL):
             break
         
         startTime = time.time()
-        parseBrandAndProductName(htmlText)
+
+        parseGoodsCode(htmlText)
         
         page += 1
-    
         endTime = time.time()
         print(url + ' Finish Time: %d sec' % (endTime - startTime))
+
+        if page == QUeryCategoryPageAmount:
+            break
     return
 
 # Prepare Category URL List
 getCategoryURLList(pq(getHTML(MainURL + '/main.momo')))
 
 # Parse Product Name in Every Sub Page
+queryCategoryCount = 0
 for path in CategoryURLList:
     url = MainURL + path
 
     t = threading.Thread(target=worker, args=(url, ), daemon=True)
     ThreadList.append(t)
 
+    queryCategoryCount += 1
+    if queryCategoryCount >= QueryCategoryAmount and queryCategoryCount is not 0:
+        break
 
 for t in ThreadList:
     while threading.activeCount() >= 10:
