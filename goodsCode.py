@@ -64,24 +64,6 @@ def isPageAvaliable(htmlText):
     findall = re.findall(r'<dt id="rightBtn" class="rightBtn">', htmlText, re.IGNORECASE)
     return bool(findall)
 
-#parseBrandAndProductName
-def parseBrandAndProductName(htmlText):
-    if htmlText == '':
-        return
-    
-    findallList = re.findall(r'<input type="hidden" name="goodsCode" id="goodsCode" value=\'([0-9]*)\'/>|<p class="prdName">(?:.*?【(.*?)】(.*?))<\/p>', htmlText)
-    if findallList:
-        for item in findallList:
-            code = item[0]
-            brand = item[1]
-            product = item[2]
-            if item != '':
-                GoodsCodeList.add(code)
-                pass
-            if brand != '' or product != '':
-                ResultList.append([brand, product])
-                pass
-
 #parseGoodsCode
 def parseGoodsCode(htmlText):
     if htmlText == '':
@@ -95,9 +77,11 @@ def parseGoodsCode(htmlText):
         GoodsCodeList.add(code)
 
 # Worker
-def worker(CategoryURL):
+def worker(path):
+    url = MainURL + path
+
     # parse query parameters
-    parsedURL = urlparse(CategoryURL)
+    parsedURL = urlparse(url)
     
     # Prepare Pages URL List for Loop Page
     page = 0
@@ -130,9 +114,7 @@ getCategoryURLList(pq(getHTML(MainURL + '/main.momo')))
 # Parse Product Name in Every Sub Page
 queryCategoryCount = 0
 for path in CategoryURLList:
-    url = MainURL + path
-
-    t = threading.Thread(target=worker, args=(url, ), daemon=True)
+    t = threading.Thread(target=worker, args=(path, ), daemon=True)
     ThreadList.append(t)
 
     queryCategoryCount += 1
@@ -147,11 +129,6 @@ for t in ThreadList:
 
 for t in ThreadList:
     t.join()
-
-# Write to File
-with open('csvProductWithBrand.csv', 'w', newline='') as csvfile:
-    writer = csv.writer(csvfile)
-    writer.writerows(ResultList)
 
 # Write code to file
 codeRowList = []
