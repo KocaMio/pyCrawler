@@ -8,8 +8,8 @@ def hashBrandWithCategory():
         
         for row in rows:
             brandENTW = row[0].split('|')
-            en = brandENTW[0]
-            tw = brandENTW[1]
+            en = brandENTW[0].strip()
+            tw = brandENTW[1].strip()
 
             hashBrand = ''
             if en is not '' or tw is not '':
@@ -33,8 +33,8 @@ def hashProductWithBrand():
         rows = csv.reader(csvfile)
         
         for row in rows:
-            brandEN = row[0]
-            brandTW = row[1]
+            brandEN = row[0].strip()
+            brandTW = row[1].strip()
             name = row[2]
 
             if name == '':
@@ -60,3 +60,4 @@ def hashProductWithBrand():
 
 
 hashBrandWithCategory()
+# hashProductWithBrand()
