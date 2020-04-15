@@ -1,0 +1,21 @@
+// 取得食品的所有目錄
+curl --location --request GET 'https://ecapi.pchome.com.tw/cdn/ecshop/cateapi/v1.5/region&sign=h24%252Ffood&_callback=cb_ecshopCategoryRegion&5289728' \
+--header 'Referer: https://24h.m.pchome.com.tw/region/DBAE' \
+--header 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.92 Safari/537.36'
+
+// 取得該目錄的商品(分頁)
+curl --location --request GET 'https://ecshweb.pchome.com.tw/searchplus/v1/index.php/all/category/DBAE/results?sort=sale/dc&show=list&page=1&callback=json_search' \
+--header 'Referer: https://24h.m.pchome.com.tw/region/DBAE' \
+--header 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.92 Safari/537.36'
+
+// 取得該商品的廠商名稱
+curl --location --request GET 'https://ecapi.pchome.com.tw/cdn/ecshop/cateapi/v1.5/store&id=DBAY48&_callback=json_storestyle&5289729' \
+--header 'authority: ecapi.pchome.com.tw' \
+--header 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.92 Safari/537.36' \
+--header 'accept: */*' \
+--header 'sec-fetch-site: same-site' \
+--header 'sec-fetch-mode: no-cors' \
+--header 'sec-fetch-dest: script' \
+--header 'referer: https://24h.m.pchome.com.tw/prod/DBAK09-A90055VJX' \
+--header 'accept-language: en-US,en;q=0.9,zh-TW;q=0.8,zh;q=0.7' \
+--header 'cookie: _pa=xxx-1bd0b51e-4da6-4090-a007-720999476c85; uuid=xxx-734c209d-b36c-404b-8374-17d3e40f2302; _ga=GA1.3.203540150.1586917713; _gid=GA1.3.1114202545.1586917713; _pat=J.1586917712501.9; puuid=K.20200415102832.10; ECC=d0bcf57a9a33965774390e87cbc06fea5cce575e.1586917722; ECWEBSESS=8f06136094.e0feeca6ed599ef5dd063cb2670ae1b37f16dfff.1586917721; _gcl_au=1.1.788193574.1586917723; gsite=24h; _fbp=fb.2.1586917724017.1189366025; venguid=9c206193-d650-441f-99bb-f293748a99fd.wg1-xvxf20200415; vensession=4ef06f96-86e7-4f98-86bd-db290341d038.wg1-xvxf20200415.se; HistoryEC=%7B%22P%22%3A%5B%7B%22Id%22%3A%22DBAK09-A90055VJX%22%2C%20%22M%22%3A1586918418%7D%2C%20%7B%22Id%22%3A%22DBAY0Z-A9006CYRD%22%2C%20%22M%22%3A1586918372%7D%2C%20%7B%22Id%22%3A%22DBAEFR-A900AIA7E%22%2C%20%22M%22%3A1586918345%7D%2C%20%7B%22Id%22%3A%22DBAE7B-A9005PARK%22%2C%20%22M%22%3A1586918306%7D%2C%20%7B%22Id%22%3A%22QFAH52-A9008NNZQ%22%2C%20%22M%22%3A1586917878%7D%5D%2C%20%22T%22%3A1%7D'
