@@ -3,6 +3,12 @@ import threading, time, random, urllib.request, re, csv, json, hashlib
 result = []
 
 def hashBrandWithCategory():
+    header = []
+    header.append("Hash")
+    header.append("BrandEN")
+    header.append("BrandTW")
+    header.append("Category")
+    result.append(header)
     with open('csvBrandWithCategory.csv', newline='', encoding='UTF-8') as csvfile:
         rows = csv.reader(csvfile)
         
@@ -29,6 +35,12 @@ def hashBrandWithCategory():
         writer.writerows(result)
 
 def hashProductWithBrand():
+    header = []
+    header.append("Hash")
+    header.append("BrandEN")
+    header.append("BrandTW")
+    header.append("ProductName")
+    result.append(header)
     with open('csvProductWithBrand.csv', newline='', encoding='UTF-8') as csvfile:
         rows = csv.reader(csvfile)
         

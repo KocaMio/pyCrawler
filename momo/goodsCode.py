@@ -7,8 +7,8 @@ import re
 import csv
 
 # Develop Control
-QueryCategoryAmount = 1 # 0 => query all
-QUeryCategoryPageAmount = 5 # 0 => query all
+QueryCategoryAmount = 0 # 0 => query all
+QUeryCategoryPageAmount = 0 # 0 => query all
 
 MainURL = "https://m.momoshop.com.tw"
 CategoryURLList = []
@@ -33,21 +33,23 @@ def getHTML(url):
 
 # Get Category URL List
 def getCategoryURLList(doc):
-    for element in doc('.sortBtnArea li a'):
-        href = element.attrib['href']
+    for element in doc('.newClassificationFilterArea dl dd a'):
         
+        try:
+            element.attrib['subcatecode']
+        except Exception as identifier:
+            continue
+        
+        cateCode = element.attrib['subcatecode']
+
         #skip certain category
-        if href.find('cn=2400000000') is not -1:
+        if cateCode == '2000000000':
+            continue
+        
+        if cateCode == '':
             continue
 
-        if href == '':
-            continue
-
-        #get only category cn=2000000000
-        if href.find('cn=2000000000') is -1:
-            continue
-
-        CategoryURLList.append(href)
+        CategoryURLList.append('/category.momo?cn=' + cateCode)
 
 # parse category url list
 def parseCategoryURLList():
@@ -113,7 +115,7 @@ def worker(path):
     return
 
 # Prepare Category URL List
-getCategoryURLList(pq(getHTML(MainURL + '/main.momo')))
+getCategoryURLList(pq(getHTML(MainURL + '/category.momo?cn=2000000000&cid=dir&oid=dir&imgSH=fourCardStyle')))
 
 # Parse Product Name in Every Sub Page
 queryCategoryCount = 0
@@ -122,7 +124,7 @@ for path in CategoryURLList:
     ThreadList.append(t)
 
     queryCategoryCount += 1
-    if queryCategoryCount >= QueryCategoryAmount and queryCategoryCount is not 0:
+    if queryCategoryCount >= QueryCategoryAmount and QueryCategoryAmount is not 0:
         break
 
 for t in ThreadList:

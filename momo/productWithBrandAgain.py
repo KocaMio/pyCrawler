@@ -18,10 +18,9 @@ def getHTML(url):
 
 # Worker for Parse ProductName, BrandName, Categorys
 ResultList = []
-def workerParseProductDetail(code):
+def workerParseProductDetail(url):
     time.sleep(random.randrange(3))
 
-    url = "https://m.momoshop.com.tw/goods.momo?i_code=" + code
     htmlText = getHTML(url)
 
     if htmlText == '':
@@ -50,21 +49,21 @@ def workerParseProductDetail(code):
 
     executeEndTime = time.time()
     
-    print('GoodsCode: ' + code + "  ExecuteEndTime: %d" % (executeEndTime - executeStartTime))
+    print('URL: ' + url + "  ExecuteEndTime: %d" % (executeEndTime - executeStartTime))
 
 # Excute Start
 startTime = time.time()
 
-GoodsCodeList = []
-with open('csvCodeList.csv', newline='') as csvfile:
-  rows = csv.reader(csvfile)
-  for row in rows:
-    GoodsCodeList.append(row[0])
+failUrlList = []
+with open('csvProductWithBrandFail.csv', newline='') as csvfile:
+    rows = csv.reader(csvfile)
+    for row in rows:
+        failUrlList.append(row[0])
 
 # Parse ProductName, BrandName, ProductCategory
 ThreadList = [] 
-for code in GoodsCodeList:
-    t = threading.Thread(target=workerParseProductDetail, args=(code, ), daemon=True)
+for url in failUrlList:
+    t = threading.Thread(target=workerParseProductDetail, args=(url, ), daemon=True)
     ThreadList.append(t)
 
 for t in ThreadList:
@@ -76,7 +75,7 @@ for t in ThreadList:
 for t in ThreadList:
     t.join()
 
-# Prepare CSV
+# Write to File
 csvRowList = []
 for goods in ResultList:
     row = []
@@ -85,8 +84,7 @@ for goods in ResultList:
     row.append(goods['name'])
     csvRowList.append(row)
 
-# Write to File
-with open('csvProductWithBrand.csv', 'w', newline='') as csvfile:
+with open('csvProductWithBrandAgain.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerows(csvRowList)
 
